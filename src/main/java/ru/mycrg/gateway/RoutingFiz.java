@@ -28,4 +28,13 @@ public class RoutingFiz {
                 .build();
     }
 
+    @Bean
+    public RouteLocator strings(RouteLocatorBuilder builder) {
+        return builder.routes()
+                .route(p -> p
+                        .path("/strings")
+                        .uri("http://localhost:8090/strings"))
+                .build();
+    }
+
 }
