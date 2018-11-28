@@ -4,10 +4,35 @@ server:
 spring:
   application:
     name: fiz-gateway
+  security:
+    user:
+      password: 314
 
-# eureka server url
-#  eureka.client.service-url.default-zone=http://localhost:8761/eureka
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8314/eureka/
+
+zuul:
+#  prefix: /api
+  ignoredServices: '*'
+  routes:
+    auth-service:
+      path: /auth/**
+      service-id: http://localhost:8000/auth
+      sensitive-headers: Cookie,Set-Cookie
+
+    # Inet test
+    get:
+      path: /get/**
+      url: http://httpbin.org/get
+
+    # Own service test
+    strings:
+      path: /strings/**
+      serviceId: http://localhost:8090/strings
+
+    # Geoserver
+    geoserver:
+      path: /geoserver/rest/**
+      serviceId: http://localhost:8080/geoserver/rest
