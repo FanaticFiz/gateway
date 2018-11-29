@@ -25,20 +25,21 @@ public class GeoserverPreFilter extends ZuulFilter {
 
     @Override
     public boolean shouldFilter() {
-        return RequestContext
-                .getCurrentContext()
-                .getRequest()
-                .getServletPath()
-                .contains("geoserver");
+        return false;
+//        return RequestContext
+//                .getCurrentContext()
+//                .getRequest()
+//                .getServletPath()
+//                .contains("geoserver");
     }
 
     @Override
     public Object run() {
         log.info("GeoserverPreFilter run");
 
-        RequestContext ctx = RequestContext.getCurrentContext();
-        HttpServletRequest request = ctx.getRequest();
-        request.setAttribute("fizAttribute", "fizAttribute");
+//        RequestContext ctx = RequestContext.getCurrentContext();
+//        HttpServletRequest request = ctx.getRequest();
+//        request.setAttribute("fizAttribute", "fizAttribute");
 
         return null;
     }

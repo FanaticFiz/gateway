@@ -1,6 +1,7 @@
 package ru.mycrg.gateway;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,36 +34,43 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         log.info("Fiz JwtTokenAuthenticationFilter doFilterInternal");
 
-        // 1. get the authentication header. Tokens are supposed to be passed in the authentication header
-        String header = request.getHeader(jwtConfig.getHeader());
-        log.info("header: {}", header);
+        // 1. get the authentication header.
+        String token = request.getParameter("access_token");
+        if (token == null) {
+            // Tokens are supposed to be passed in the authentication header
+            String header = request.getHeader(jwtConfig.getHeader());
 
-        // 2. validate the header and check the prefix
-        if(header == null || !header.startsWith(jwtConfig.getPrefix())) {
-            chain.doFilter(request, response); // If not valid, go to the next filter.
+            log.info("header: {}", header);
 
-            log.info("not valid, go to the next filter");
-            return;
+            // 2. validate the header and check the prefix
+            if(header == null || !header.startsWith(jwtConfig.getPrefix())) {
+                chain.doFilter(request, response); // If not valid, go to the next filter.
+
+                log.info("not valid, go to the next filter");
+                return;
+            }
+
+            // If there is no token provided and hence the user won't be authenticated.
+            // It's Ok. Maybe the user accessing a public path or asking for a token.
+
+            // All secured paths that needs a token are already defined and secured in config class.
+            // And If user tried to access without access token, then he won't be authenticated and an exception will be thrown.
+
+            // 3. Get the token
+            token = header.replace(jwtConfig.getPrefix(), "");
         }
 
-        // If there is no token provided and hence the user won't be authenticated.
-        // It's Ok. Maybe the user accessing a public path or asking for a token.
-
-        // All secured paths that needs a token are already defined and secured in config class.
-        // And If user tried to access without access token, then he won't be authenticated and an exception will be thrown.
-
-        // 3. Get the token
-        String token = header.replace(jwtConfig.getPrefix(), "");
-        try {	// exceptions might be thrown in creating the claims if for example the token is expired
-
+        try {    // exceptions might be thrown in creating the claims if for example the token is expired
             // 4. Validate the token
             Claims claims = Jwts.parser()
                     .setSigningKey(jwtConfig.getSecret().getBytes())
                     .parseClaimsJws(token)
                     .getBody();
 
-            String username = claims.getSubject();
-            if(username != null) {
+            log.info("Claims: {}", claims);
+
+            String username = claims.get("user_name").toString();
+            if (username != null) {
                 @SuppressWarnings("unchecked")
                 List<String> authorities = (List<String>) claims.get("authorities");
 
@@ -75,8 +83,13 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
                 // 6. Authenticate the user. Now, user is authenticated
                 log.info("Now, user is authenticated: {}", auth);
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
+                log.warn("Incorrect claims, username not exist");
             }
+        } catch (ExpiredJwtException expired) {
+            log.warn("JWT expired", expired);
 
+            // TODO: Do something
         } catch (Exception e) {
             // In case of failure. Make sure it's clear; so guarantee user won't be authenticated
             log.error("Not authenticated. ", e);

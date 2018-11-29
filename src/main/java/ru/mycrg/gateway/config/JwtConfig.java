@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 public class JwtConfig {
 
-    @Value("${security.jwt.uri:/auth/**}")
+    @Value("${security.jwt.uri:/oauth/token/**}")
     private String Uri;
 
     @Value("${security.jwt.header:Authorization}")
@@ -16,7 +16,7 @@ public class JwtConfig {
     @Value("${security.jwt.expiration:#{24*60*60}}")
     private int expiration;
 
-    @Value("${security.jwt.secret:JwtSecretFizKey}")
+    @Value("${security.jwt.secret:fiz_fiz}")
     private String secret;
 
     public String getUri() {
